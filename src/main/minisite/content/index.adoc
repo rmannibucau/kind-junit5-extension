@@ -123,3 +123,23 @@ BundleBee provides some link:https://www.yupiik.io/bundlebee/junit5.html[JUnit,w
 * run in `dryRun` the deployment package you setup (with multiple configuration potentially) so you go trough real admission controllers,
 * totally deploy your application and validates it runs,
 * validate E2E your operator
+
+== Utilities
+
+`FusionAssertions` enables to write assertions with a provided Kubernetes client:
+
+[source,java]
+----
+FusionAssertions.assertKubernetes(kubeconfigPath, client -> {
+    final var res = client.send(HttpRequest.newBuilder()
+                    .timeout(Duration.ofMinutes(1))
+                    .GET()
+                    .uri(URI.create("https://kubernetes.api/api/v1/namespaces/kube-system/pods"))
+                    .build());
+    // whatever you need to validate
+    assertEquals(200, res.statusCode());
+    assertTrue(res.body().contains("\"kind\":\"PodList\""), res.body());
+});
+----
+
+TIP: `kubernetes.api` is replaced on the fly so you can hardcode it.
