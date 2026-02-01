@@ -110,6 +110,10 @@
           <encoding>UTF-8</encoding>
           <parameters>true</parameters>
           <proc>full</proc>
+          <compilerArgs>
+            <compileArg>-Xlint:deprecation</compileArg>
+            <compileArg>-Xlint:unchecked</compileArg>
+          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
