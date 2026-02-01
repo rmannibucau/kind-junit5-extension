@@ -11,6 +11,7 @@
 * Starting/Stopping a cluster aligned on JUnit lifecycle,
 * Provide to test methods the `kubeconfig`.
 
+// tag::readme[]
 == Usage
 
 The minimalistic skeleton of a test using kind is marking a class `@KindSupport`.
@@ -143,3 +144,5 @@ FusionAssertions.assertKubernetes(kubeconfigPath, client -> {
 ----
 
 TIP: `kubernetes.api` is replaced on the fly so you can hardcode it.
+
+// end::readme[]
