@@ -1,0 +1,125 @@
+= Kind JUnit Extension
+
+[abstract]
+{project_description}
+
+== Overview
+
+{project_name} simply wraps some basic operation within a JUnit (>= 5) extension:
+
+* Downloading and caching link:https://kind.sigs.k8s.io/[kind,window=blank],
+* Starting/Stopping a cluster aligned on JUnit lifecycle,
+* Provide to test methods the `kubeconfig`.
+
+== Usage
+
+The minimalistic skeleton of a test using kind is marking a class `@KindSupport`.
+Then the kubeconfig can be retrieved by injecting a `Path` (location) or `String` (content) in the test parameter or in a field.
+
+IMPORTANT: the injection must be decorated with `@KindInject`.
+
+[source,java]
+----
+
+@KindSupport
+class KindTest {
+    @Test
+    void myTest(@KindInject final Path kubeconfig) {
+        // ...
+    }
+}
+----
+
+The `@KindSupport` annotation can also be put on a test method to get a fresh cluster per method:
+
+[source,java]
+----
+
+class KindTest {
+    @Test
+    @KindSupport
+    void test1(@KindInject final Kind kc) {
+        // ...
+    }
+
+    @Test
+    @KindSupport
+    void test2(@KindInject final Kind kc) {
+        // ...
+    }
+}
+----
+
+In terms of injections you can inject:
+
+* `@KindInject Path`: the kubeconfig file location,
+* `@KindInject String`: the kubeconfig content (yaml),
+* `@KindInject Kind`: a kind handler providing cluster name, kubeconfig location and/or content.
+
+IMPORTANT: if you do use a cluster per test method and `PER_CLASS` instance configuration on the class then you *MUST* use `Kind` injection instead of `Path`/`String` ones to have the lazy evaluation of the values.
+
+== Shared cluster
+
+Starting/stopping a kind cluster can slow down seriously your test suite if you do abuse of it - on a good machine it takes between 30 and 40 seconds.
+To avoid to pay this cost per class or even method, you can use the `@KindSharedSupport` annotation which will start it once for all:
+
+[source,java]
+----
+@KindSharedSupport
+class My1Test {
+    @KindInject
+    private Kind kind;
+
+    @Test
+    void someTest() {
+        // ...
+    }
+}
+
+@KindSharedSupport
+class My2Test {
+    @KindInject
+    private Kind kind;
+
+    @Test
+    void someOtherTest() {
+        // ...
+    }
+}
+----
+
+IMPORTANT: this literally reuses the same instance but also means a test can leak a state for another test.
+When using this pattern it can be neat to generate a namespace per test method and clean up the namespace at the end of the test for example.
+
+== Companion projects
+
+=== Yupiik Fusion Kubernetes Client
+
+link:https://www.yupiik.io/fusion/fusion/http-client.html#kubernetes-client[Yupiik Fusion] provides a Kubernetes client which works seamlessly with kind extension:
+
+[source,java]
+----
+final var kubeconfig = getFromKindExtensionOrInjection();
+try (final var client = new KubernetesClient(new KubernetesClientConfiguration()
+        .setKubeconfig(kubeconfig))) {
+    final var res = client.send(HttpRequest.newBuilder()
+            .timeout(Duration.ofMinutes(1))
+            .GET()
+            .uri(URI.create("https://kubernetes.api/api/v1/namespaces/kube-system/pods"))
+            .build());
+    assertEquals(200, res.statusCode());
+    assertTrue(res.body().contains("\"kind\":\"PodList\""), res.body());
+}
+----
+
+Fusion also provides a link:https://www.yupiik.io/fusion/fusion/kubernetes-operator.html[Operator,window=_blank] support which can be tested E2E with this kind extension.
+
+=== Yupiik BundleBee
+
+link:https://www.yupiik.io/bundlebee/[Yupiik BundleBee] is a Kubernetes package manager supporting templating, patch (the best of helm and kustomize) as well as a bundling of the packages as plain jars/zip so it is enterprise friendly.
+
+BundleBee provides some link:https://www.yupiik.io/bundlebee/junit5.html[JUnit,window=_blank] integration but mixed with this kind extension you can go further:
+
+* run in `dryRun` the deployment package you setup (with multiple configuration potentially) so you go trough real admission controllers,
+* totally deploy your application and validates it runs,
+* validate E2E your operator

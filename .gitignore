@@ -1,0 +1,13 @@
+target
+.idea
+!.idea/icon.svg
+*.iws
+*.ipr
+*.iml
+.settings
+.classpath
+.project
+ignored.*
+generated
+generated_*
+.sdkmanrc
