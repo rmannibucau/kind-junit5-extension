@@ -26,19 +26,14 @@ jobs:
     name: Main Build
     runs-on: ubuntu-latest
     steps:
-      - name: Clone
-        uses: actions/checkout@v4
-      - name: Cache Maven Repository
-        uses: actions/cache@v4
-        with:
-          path: |
-            /home/runner/work/kind-junit-extension/kind-junit-extension/.m2
-          key: m2_repository
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: s4u/setup-maven-action@v1.19.0
         with:
-          distribution: 'zulu'
-          java-version: '21'
+          checkout-fetch-depth: 0
+          java-distribution: zulu
+          java-version: 21
+          maven-version: 4.0.0-rc-5
+          cache-path: /home/runner/work/kind-junit-extension/kind-junit-extension/.m2
       - name: Build
         run: mvn install -Dm2.location=/home/runner/work/kind-junit-extension/kind-junit-extension/.m2
       - name: Remove Snapshots Before Caching
@@ -47,18 +42,14 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - name: Clone
-        uses: actions/checkout@v4
-      - name: Cache Maven Repository
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/work/kind-junit-extension/kind-junit-extension/.m2
-          key: m2_repository
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: s4u/setup-maven-action@v1.19.0
         with:
-          distribution: 'zulu'
-          java-version: '21'
+          checkout-fetch-depth: 0
+          java-distribution: zulu
+          java-version: 21
+          maven-version: 4.0.0-rc-5
+          cache-path: /home/runner/work/kind-junit-extension/kind-junit-extension/.m2
       - name: Build
         run: mvn install -DskipTests ossindex:audit
       - name: Remove Snapshots Before Caching
