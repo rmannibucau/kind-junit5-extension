@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2026 - present - Yupiik SAS - https://www.yupiik.com
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.yupiik.testing</groupId>
+  <artifactId>kind-junit-extension</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Kind JUnit Extension</name>
+  <description>Simple JUnit integration around kind to ease Kubernetes or OCI image based testing.</description>
+  <url>https://yupiik.io/kind-junit-extension/</url>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>2026-01-18T17:30:52Z</project.build.outputTimestamp>
+
+    <yupiik-logging.version>1.0.8</yupiik-logging.version>
+    <junit-jupiter.version>6.0.2</junit-jupiter.version>
+    <yupiik-tools.version>1.2.13</yupiik-tools.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit-jupiter.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.yupiik.logging</groupId>
+      <artifactId>yupiik-logging-jul</artifactId>
+      <version>${yupiik-logging.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.yupiik.fusion</groupId>
+      <artifactId>fusion-kubernetes-client</artifactId>
+      <version>1.0.33</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!--
+      <plugin>
+        <groupId>io.github.git-commit-id</groupId>
+        <artifactId>git-commit-id-maven-plugin</artifactId>
+        <version>9.0.2</version>
+        <configuration>
+          <injectAllReactorProjects>true</injectAllReactorProjects>
+          <generateGitPropertiesFile>false</generateGitPropertiesFile>
+          <dateFormat>yyyy-MM-dd'T'HH:mm:ss'Z'</dateFormat>
+          <dateFormatTimeZone>GMT</dateFormatTimeZone>
+          <includeOnlyProperties>
+            <includeOnlyProperty>^git.commit.time$</includeOnlyProperty>
+          </includeOnlyProperties>
+        </configuration>
+        <executions>
+          <execution>
+            <id>get-the-git-infos</id>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+            <phase>initialize</phase>
+          </execution>
+        </executions>
+      </plugin>
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>3.5.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>3.1.4</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.3.1</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>4.0.0-beta-3</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+          <encoding>UTF-8</encoding>
+          <parameters>true</parameters>
+          <proc>full</proc>
+          <compilerArgs>
+            <compileArg>-Xlint:deprecation</compileArg>
+            <compileArg>-Xlint:unchecked</compileArg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.4</version>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <excludes>**/shared/**Test.java</excludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-shared-test</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <includes>**/shared/**Test.java</includes>
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <trimStackTrace>false</trimStackTrace>
+          <systemPropertyVariables>
+            <java.util.logging.manager>io.yupiik.logging.jul.YupiikLogManager</java.util.logging.manager>
+            <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.2</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.3.1</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>3.1.1</version>
+        <configuration>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <releaseProfiles>release</releaseProfiles>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>net.nicoulaj.maven.plugins</groupId>
+        <artifactId>checksum-maven-plugin</artifactId>
+        <version>1.11</version>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.6.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+          <autoPublish>true</autoPublish>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>4.0.0-M16</version>
+      </plugin>
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>4.5</version>
+        <executions>
+          <execution>
+            <id>check-license</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <inherited>false</inherited>
+        <configuration>
+          <aggregate>true</aggregate>
+          <mapping>
+            <adoc>DOUBLESLASH_STYLE</adoc>
+          </mapping>
+          <licenseSets>
+            <licenseSet>
+              <inlineHeader><![CDATA[Copyright (c) ${project.inceptionYear} - ${project.organization.name} - ${project.organization.url}
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+]]></inlineHeader>
+              <useDefaultExcludes>true</useDefaultExcludes>
+              <includes>
+                <include>**/*.properties</include>
+                <include>**/*.java</include>
+                <include>**/*.xml</include>
+                <include>**/*.yaml</include>
+              </includes>
+              <excludes>
+                <exclude>LICENSE</exclude>
+                <exclude>**/*.adoc</exclude>
+                <exclude>**/*.idea</exclude>
+                <exclude>**/target/**</exclude>
+                <exclude>**/generated/**</exclude>
+                <exclude>**/minisite/**</exclude>
+                <exclude>**/file</exclude>
+                <exclude>**/.m2/**</exclude>
+              </excludes>
+            </licenseSet>
+          </licenseSets>
+        </configuration>
+      </plugin>
+      <plugin><!--  mvn ossindex:audit -->
+        <groupId>org.sonatype.ossindex.maven</groupId>
+        <artifactId>ossindex-maven-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>audit-dependencies</id>
+            <phase/>
+            <goals>
+              <goal>audit</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <scope>compile,runtime</scope>
+        </configuration>
+      </plugin>
+      <!-- mvn [compile] yupiik-tools:serve-minisite -e -->
+      <plugin>
+        <groupId>io.yupiik.maven</groupId>
+        <artifactId>yupiik-tools-maven-plugin</artifactId>
+        <version>${yupiik-tools.version}</version>
+        <configuration>
+          <preferYupiikAsciidoc>true</preferYupiikAsciidoc>
+          <siteBase>//www.yupiik.io/${project.artifactId}</siteBase>
+          <title>${project.name} documentation</title>
+          <description>${project.description}</description>
+          <indexText>${project.name}</indexText>
+          <indexSubTitle>${project.description}</indexSubTitle>
+          <logoText>${project.name}</logoText>
+          <logoSideText>Documentation</logoSideText>
+          <copyright>© 2026 &lt;strong&gt;&lt;a href="https://www.yupiik.com"&gt;Yupiik&lt;/a&gt;&lt;/strong&gt;. All Rights Reserved</copyright>
+          <attributes>
+            <partialsdir>${project.basedir}/src/main/minisite/content/_partials</partialsdir>
+            <project_name>${project.name}</project_name>
+            <project_description>${project.description}</project_description>
+          </attributes>
+          <templateExtensionPoints>
+            <socialLinks>
+              &lt;li class="list-inline-item"&gt;&lt;a title="LinkedIn" target="_blank" href="https://www.linkedin.com/company/yupiik/"&gt;&lt;i class="fab fa-linkedin fa-fw"&gt;&lt;/i&gt;&lt;/a&gt;&lt;/li&gt;
+              &lt;li class="list-inline-item"&gt;&lt;a title="Twitter" target="_blank" href="https://twitter.com/Yupiik/"&gt;&lt;i class="fab fa-twitter fa-fw"&gt;&lt;/i&gt;&lt;/a&gt;&lt;/li&gt;
+              &lt;li class="list-inline-item"&gt;&lt;a title="Github" target="_blank" href="https://www.github.com/yupiik/fusion"&gt;&lt;i class="fab fa-github fa-fw"&gt;&lt;/i&gt;&lt;/a&gt;&lt;/li&gt;
+            </socialLinks>
+          </templateExtensionPoints>
+          <generateIndex>false</generateIndex>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>io.yupiik.maven</groupId>
+            <artifactId>asciidoc-java</artifactId>
+            <version>${yupiik-tools.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.12.0</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <source>17</source>
+              <doclint>none</doclint>
+              <encoding>UTF-8</encoding>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.6</version>
+            <configuration>
+              <gpgArguments>
+                <arg>--digest-algo=SHA512</arg>
+              </gpgArguments>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>net.nicoulaj.maven.plugins</groupId>
+            <artifactId>checksum-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>source-release-checksum</id>
+                <goals>
+                  <goal>artifacts</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <algorithms>
+                <algorithm>SHA-512</algorithm>
+              </algorithms>
+              <csvSummary>false</csvSummary>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile> <!--  by default we want changes we do in the project to be reflected in the doc even without building it  -->
+      <id>generate-content-but-not-site</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.yupiik.maven</groupId>
+            <artifactId>yupiik-tools-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>buildDoc</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>minisite</goal>
+                </goals>
+                <configuration>
+                  <skipRendering>true</skipRendering>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile> <!--  mvn clean package -Pgh-pages  -->
+      <id>gh-pages</id>
+      <properties>
+        <minisite.serverId>github.com</minisite.serverId>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.yupiik.maven</groupId>
+            <artifactId>yupiik-tools-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>gh-pages</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>minisite</goal>
+                </goals>
+                <configuration>
+                  <git>
+                    <ignore>false</ignore>
+                    <noJekyll>true</noJekyll>
+                    <serverId>${minisite.serverId}</serverId>
+                    <branch>refs/heads/gh-pages</branch>
+                    <url>https://github.com/yupiik/fusion.git</url>
+                  </git>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://github.com/yupiik/kind-junit-extension/blob/master/LICENSE</url>
+      <distribution>may be downloaded from the Maven repository</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Romain Manni-Bucau</name>
+      <id>rmannibucau</id>
+      <roles>
+        <role>Contributor</role>
+      </roles>
+      <timezone>+1</timezone>
+    </developer>
+    <developer>
+      <name>Francois Papon</name>
+      <id>fpapon</id>
+      <roles>
+        <role>Contributor</role>
+      </roles>
+      <timezone>+1</timezone>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/yupiik/kind-junit-extension.git</connection>
+    <developerConnection>scm:git:https://github.com/yupiik/kind-junit-extension.git</developerConnection>
+    <url>https://github.com/yupiik/kind-junit-extension.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <organization>
+    <name>Yupiik SAS</name>
+    <url>https://www.yupiik.com</url>
+  </organization>
+
+  <inceptionYear>2026 - present</inceptionYear>
+
+</project>
